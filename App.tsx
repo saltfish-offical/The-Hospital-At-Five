@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { GamePhase, RoomType, PlayerState, LogEntry, Item, FloorData, DialogData } from './types';
 import { FLOORS, ITEMS_DB, INITIAL_TIME_MINUTES, DEADLINE_MINUTES } from './constants';
 import { audio } from './services/audioService';
-import { Typewriter } from './components/Typewriter';
 import { 
   Heart, Brain, Clock, Search, DoorOpen, Skull, 
   Ghost, Briefcase, FileText, Lock, MessageSquare, ArrowRight 
@@ -24,19 +23,6 @@ const PlayerSprite = ({ facing }: { facing: 'left' | 'right' }) => (
       <rect x="32" y="70" width="8" height="50" fill="#0a0a0a" />
       <rect x="15" y="35" width="30" height="40" rx="2" fill="#3f1a1a" stroke="#000" />
       <circle cx="30" cy="20" r="12" fill="#888" />
-    </g>
-  </svg>
-);
-
-const DoctorSprite = ({ level }: { level: number }) => (
-  <svg width="100" height="160" viewBox="0 0 80 140" className="animate-pulse">
-    <g filter="drop-shadow(0 0 15px rgba(200,0,0,0.5))">
-      <path d="M15 100 L20 30 L60 30 L65 100 L40 115 Z" fill="#e0e0e0" stroke="#000" strokeWidth="2" />
-      <path d="M25 40 Q35 50 25 80" stroke="#8a0000" strokeWidth="5" strokeLinecap="round" />
-      <circle cx="40" cy="20" r="14" fill="#fff" stroke="#000" />
-      <path d="M30 18 L50 18" stroke="black" strokeWidth="3" /> {/* Mask */}
-      <circle cx="35" cy="15" r="2" fill="red" />
-      <circle cx="45" cy="15" r="2" fill="red" />
     </g>
   </svg>
 );
@@ -138,10 +124,10 @@ const CinematicIntro = ({ onComplete }: { onComplete: () => void }) => {
             <div className="mt-12 p-8 border-2 border-red-800 bg-black">
                 <div className="text-2xl text-red-600 mb-4 font-bold">游戏现在开始</div>
                 <div className="grid grid-cols-2 gap-4 text-left font-mono text-red-400">
-                    <div>时间：4:31</div>
+                    <div>当前时间：17:00 (钟声已响)</div>
                     <div>生命值：5/5</div>
                     <div>金币：10</div>
-                    <div>目标：在29分钟内找到厕所，或者找到真相</div>
+                    <div>目标：在17:30前逃离或存活</div>
                 </div>
             </div>
             
@@ -188,15 +174,14 @@ export default function App() {
     weaponLevel: 1,
     pets: [],
     toiletLevel: 0,
-    time: INITIAL_TIME_MINUTES + 1, // Start 16:31
+    time: INITIAL_TIME_MINUTES, // Start 17:00
     flags: {},
     lastCombatTime: 0
   });
 
   const [logs, setLogs] = useState<LogEntry[]>([]);
-  const [activeEnemy, setActiveEnemy] = useState<any>(null);
   const [activeRoom, setActiveRoom] = useState<RoomType | null>(null);
-  const [activePuzzle, setActivePuzzle] = useState<Item | null>(null); // For reading files
+  const [activePuzzle, setActivePuzzle] = useState<Item | null>(null); 
   const [dialogData, setDialogData] = useState<DialogData | null>(null);
   
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -207,10 +192,11 @@ export default function App() {
     logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [logs]);
 
-  // Time Limit Check
+  // Time Limit Check (17:30)
   useEffect(() => {
     if ((phase === GamePhase.EXPLORATION || phase === GamePhase.ROOM_VIEW) && player.time >= DEADLINE_MINUTES) {
-        handle5PMEvent();
+        setPhase(GamePhase.GAME_OVER);
+        addLog("时间到了。17:30。黑暗彻底降临。", "danger");
     }
   }, [player.time, phase]);
 
@@ -233,37 +219,30 @@ export default function App() {
       setPlayer(p => ({ ...p, time: p.time + mins }));
   };
 
-  const handle5PMEvent = () => {
-      setPhase(GamePhase.EVENT_5PM);
-      audio.playDrone();
-      
-      if (activeRoom === RoomType.TOILET) {
-          addLog("当——当——当—— 五点的钟声响了。", "story");
-          setTimeout(() => {
-              setDialogData({
-                  speaker: "门外",
-                  text: "咚... 咚... 咚... (急促的敲门声) '小宝？是你吗？妈妈回来了，快开门！'",
-                  options: [
-                      { text: "开门 (50% 存活)", action: () => resolveKnock(true) },
-                      { text: "不开门 (安全)", action: () => resolveKnock(false) }
-                  ]
-              });
-              setPhase(GamePhase.DIALOG);
-          }, 2000);
-      } else {
-          setPhase(GamePhase.GAME_OVER);
-          addLog("你没有在五点前找到厕所。黑暗吞噬了你。", "danger");
+  // Triggered when entering toilet after 17:00 (which is immediately in this mode)
+  const checkToiletEvent = () => {
+      // 30% chance of knocking if in toilet
+      if (Math.random() > 0.7) {
+          setPhase(GamePhase.EVENT_5PM);
+          audio.playDrone();
+          setDialogData({
+              speaker: "门外",
+              text: "咚... 咚... 咚... (急促的敲门声) '小宝？是你吗？妈妈回来了，快开门！'",
+              options: [
+                  { text: "开门 (50% 存活)", action: () => resolveKnock(true) },
+                  { text: "不开门 (安全)", action: () => resolveKnock(false) }
+              ]
+          });
+          setPhase(GamePhase.DIALOG);
       }
   };
 
   const resolveKnock = (opened: boolean) => {
       if (!opened) {
-          addLog("你屏住呼吸，门外的声音渐渐消失了。你活过了这个时刻。", "success");
-          setPlayer(p => ({ ...p, time: p.time + 1 })); // Advance past 17:00
+          addLog("你屏住呼吸，门外的声音渐渐消失了。", "success");
           setPhase(GamePhase.ROOM_VIEW);
           setDialogData(null);
       } else {
-          // 50/50 chance
           if (Math.random() > 0.5) {
                addLog("门开了，是妈妈！她把你拉出了医院。", "success");
                setPhase(GamePhase.VICTORY);
@@ -283,7 +262,6 @@ export default function App() {
       if (e.key === 'ArrowRight' || e.key === 'd') {
         setPlayer(p => {
             const nextX = Math.min(currentFloor.length, p.x + step);
-            // Move time slightly with distance
             const timePassed = Math.floor(nextX / 200) - Math.floor(p.x / 200) > 0 ? 1 : 0;
             return { ...p, x: nextX, facing: 'right', time: p.time + timePassed };
         });
@@ -335,7 +313,6 @@ export default function App() {
       if (item) {
         setPlayer(prev => ({ ...prev, inventory: [...prev.inventory, { ...item, quantity: 1 }] }));
         addLog(`获得物品: ${item.name}`, "success");
-        // Remove item from world visually would require state update of floor entities, simplified here
         audio.playBeep(800, 'sine', 0.1);
       }
   };
@@ -361,6 +338,9 @@ export default function App() {
     } else {
         setActiveRoom(room);
         setPhase(GamePhase.ROOM_VIEW);
+        if (room === RoomType.TOILET) {
+            checkToiletEvent();
+        }
     }
   };
 
@@ -459,8 +439,6 @@ export default function App() {
         </div>
       );
   }
-
-  // --- Main HUD & Viewport ---
 
   return (
     <div className="h-screen w-full bg-black text-zinc-300 flex flex-col font-serif overflow-hidden">

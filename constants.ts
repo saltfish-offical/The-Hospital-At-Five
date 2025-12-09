@@ -1,10 +1,10 @@
 import { FloorData, RoomType, Item, Entity } from './types';
 
-// Time: 16:30 to 17:00 (Game Start to Bell)
-// 16:30 = 990 minutes
+// Time: 17:00 to 17:30
 // 17:00 = 1020 minutes
-export const INITIAL_TIME_MINUTES = 16 * 60 + 30; 
-export const DEADLINE_MINUTES = 17 * 60; 
+// 17:30 = 1050 minutes
+export const INITIAL_TIME_MINUTES = 17 * 60; 
+export const DEADLINE_MINUTES = 17 * 60 + 30; 
 
 export const ITEMS_DB: Record<string, Omit<Item, 'quantity'>> = {
   'bandage': { id: 'bandage', name: '绷带', description: '恢复1点生命值。', type: 'HEALING', value: 1 },

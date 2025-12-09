@@ -1,14 +1,17 @@
 export enum GamePhase {
+  SPLASH,
   MENU,
   INTRO,
   EXPLORATION,
   ROOM_VIEW,
   COMBAT,
-  PUZZLE,     // New phase for solving keypads/reading files
-  DIALOG,     // New phase for NPC interaction
+  PUZZLE,
+  KEYPAD,
+  SHOP_VIEW,
+  DIALOG,
   GAME_OVER,
   VICTORY,
-  EVENT_5PM   // Specific phase for 17:00 event
+  EVENT_5PM
 }
 
 export enum RoomType {
@@ -24,25 +27,52 @@ export enum RoomType {
   SECURITY = '保安室',
   DEAN_OFFICE = '院长办公室',
   ARCHIVES = '档案室',
-  VOID = '穿越层'
+  VOID = '穿越层',
+  MORGUE = '停尸房',
+  WAITING_ROOM = '候诊室',
+  UTILITY = '污物间',
+  POWER_ROOM = '配电室'
 }
 
 export interface Item {
   id: string;
   name: string;
   description: string;
-  type: 'WEAPON' | 'HEALING' | 'KEY' | 'MISC' | 'FILE'; // Added FILE
-  value: number; 
+  type: 'WEAPON' | 'HEALING' | 'KEY' | 'MISC' | 'FILE' | 'RUMOR';
+  value: number;
   quantity: number;
-  content?: string; // Text content for files
-  code?: string; // If it contains a code
+  content?: string;
+  isTrue?: boolean;
+}
+
+export interface Achievement {
+  id: string;
+  title: string;
+  description: string;
+  rewardGold: number;
+  unlocked: boolean;
+}
+
+export interface NPC {
+    id: string;
+    name: string;
+    description: string;
+    dialogue: {
+        id: string;
+        text: string;
+        options: { text: string; nextId?: string; action?: string }[];
+    }[];
 }
 
 export interface Entity {
   id: string;
-  type: 'DOOR' | 'ITEM' | 'ENEMY' | 'NPC';
-  x: number; 
+  type: 'DOOR' | 'ITEM' | 'ENEMY' | 'NPC' | 'CONTAINER';
+  z: number; // Depth position (0 to Length)
+  side: 'left' | 'right' | 'center'; 
   data: any; 
+  locked?: boolean;
+  code?: string;
+  contentId?: string;
   interacted?: boolean;
 }
 
@@ -64,21 +94,22 @@ export interface PlayerState {
   sanity: number;
   gold: number;
   floor: number;
-  x: number;
-  facing: 'left' | 'right';
+  z: number; // Current depth position
+  facing: 'forward'; 
   inventory: Item[];
   weaponLevel: number;
   pets: string[]; 
   toiletLevel: number;
-  time: number; // Minutes from 00:00 (16:30 = 990)
+  time: number; 
   flags: Record<string, boolean>;
+  achievements: string[]; 
   lastCombatTime: number;
 }
 
 export interface LogEntry {
   id: string;
   text: string;
-  type: 'info' | 'danger' | 'success' | 'system' | 'story';
+  type: 'info' | 'danger' | 'success' | 'system' | 'story' | 'gold';
   timestamp: string;
 }
 

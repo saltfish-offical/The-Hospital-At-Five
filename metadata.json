@@ -1,0 +1,7 @@
+{
+  "name": "诡异医院：五点钟声",
+  "description": "当下午五点的钟声响起，规则将会改变。一款集解密、生存、恐怖于一体的网页游戏。",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

@@ -1,17 +1,17 @@
 export enum GamePhase {
-  SPLASH,
-  MENU,
-  INTRO,
+  SPLASH,     // TIMI-like intro
+  MENU,       // Main Menu
+  INTRO,      // Cinematic Text
   EXPLORATION,
   ROOM_VIEW,
   COMBAT,
-  PUZZLE,
-  KEYPAD,
-  SHOP_VIEW,
-  DIALOG,
+  PUZZLE,     // Reading files
+  KEYPAD,     // Entering codes
+  SHOP_VIEW,  // Shopping interface
+  DIALOG,     // NPC interaction
   GAME_OVER,
   VICTORY,
-  EVENT_5PM
+  EVENT_5PM   // Specific phase for 17:00 event
 }
 
 export enum RoomType {
@@ -27,11 +27,7 @@ export enum RoomType {
   SECURITY = '保安室',
   DEAN_OFFICE = '院长办公室',
   ARCHIVES = '档案室',
-  VOID = '穿越层',
-  MORGUE = '停尸房',
-  WAITING_ROOM = '候诊室',
-  UTILITY = '污物间',
-  POWER_ROOM = '配电室'
+  VOID = '穿越层'
 }
 
 export interface Item {
@@ -39,10 +35,10 @@ export interface Item {
   name: string;
   description: string;
   type: 'WEAPON' | 'HEALING' | 'KEY' | 'MISC' | 'FILE' | 'RUMOR';
-  value: number;
+  value: number; // Cost or Effect value
   quantity: number;
-  content?: string;
-  isTrue?: boolean;
+  content?: string; // Text content for files/rumors
+  isTrue?: boolean; // For Rumors
 }
 
 export interface Achievement {
@@ -53,26 +49,14 @@ export interface Achievement {
   unlocked: boolean;
 }
 
-export interface NPC {
-    id: string;
-    name: string;
-    description: string;
-    dialogue: {
-        id: string;
-        text: string;
-        options: { text: string; nextId?: string; action?: string }[];
-    }[];
-}
-
 export interface Entity {
   id: string;
   type: 'DOOR' | 'ITEM' | 'ENEMY' | 'NPC' | 'CONTAINER';
-  z: number; // Depth position (0 to Length)
-  side: 'left' | 'right' | 'center'; 
+  x: number; 
   data: any; 
   locked?: boolean;
   code?: string;
-  contentId?: string;
+  contentId?: string; // ID of item inside container
   interacted?: boolean;
 }
 
@@ -94,15 +78,15 @@ export interface PlayerState {
   sanity: number;
   gold: number;
   floor: number;
-  z: number; // Current depth position
-  facing: 'forward'; 
+  x: number;
+  facing: 'left' | 'right';
   inventory: Item[];
   weaponLevel: number;
   pets: string[]; 
   toiletLevel: number;
-  time: number; 
+  time: number; // Minutes from 00:00 (16:30 = 990)
   flags: Record<string, boolean>;
-  achievements: string[]; 
+  achievements: string[]; // IDs of unlocked achievements
   lastCombatTime: number;
 }
 
